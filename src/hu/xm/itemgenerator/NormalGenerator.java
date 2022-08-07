@@ -11,25 +11,35 @@ public class NormalGenerator<T> extends ItemGenerator<T> {
         this.itemList = new ArrayList<>();
     }
 
+    @SafeVarargs
+    public NormalGenerator(Item<T> ...items) {
+        this(items.length);
+        for(Item<T> item : items) {
+            add(item);
+        }
+    }
+
     public NormalGenerator(int initSize) {
         this.itemList = new ArrayList<>(initSize);
     }
 
     public @NotNull List<ItemPair<T>> generate() {
+        checkEmpty();
         List<ItemPair<T>> result = new ArrayList<>(itemList.size());
         for(Item<T> item : itemList) {
             if(r.nextDouble(100) < item.getChance()) {
-                result.add(new ItemPair<>(item.getItem(), item.getAmount()));
+                result.add(item.get());
             }
         }
         return result;
     }
 
     public @NotNull List<ItemPair<T>> generate(double amountBonus, double chanceBonus) {
+        checkEmpty();
         List<ItemPair<T>> result = new ArrayList<>(itemList.size());
         for(Item<T> item : itemList) {
             if(r.nextDouble(100) < item.getChance(chanceBonus)) {
-                result.add(new ItemPair<>(item.getItem(), r.nextInt(item.getAmount(), (int) (item.getAmount() + item.getAmountModifier()*amountBonus) + 1)));
+                result.add(item.get(amountBonus));
             }
         }
         return result;

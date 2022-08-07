@@ -10,11 +10,19 @@ import java.util.List;
 public class WeightedGenerator<T> extends ItemGenerator<T> {
     private double weightSum = 0;
     private double bonusSum = 0;
-    ArrayList<Item<T>> tempStorage;
+    private final ArrayList<Item<T>> tempStorage;
 
     public WeightedGenerator() {
         this.itemList = new ArrayList<>();
         this.tempStorage = new ArrayList<>();
+    }
+
+    @SafeVarargs
+    public WeightedGenerator(Item<T> ...items) {
+        this(items.length);
+        for(Item<T> item : items) {
+            add(item);
+        }
     }
 
     public WeightedGenerator(int initSize) {
@@ -30,19 +38,35 @@ public class WeightedGenerator<T> extends ItemGenerator<T> {
     }
 
     public @NotNull ItemPair<T> generate() {
+        checkEmpty();
         double number = r.nextDouble(weightSum);
         for(Item<T> item : itemList) {
             number -= item.getChance();
             if(number <= 0.0) {
-                return new ItemPair<>(item.getItem(), item.getAmount());
+                return item.get();
             }
         }
         // in case of number not reaching 0.0 or lower due to floating point precision errors
         Item<T> item = itemList.get(itemList.size() - 1);
-        return new ItemPair<>(item.getItem(), item.getAmount());
+        return item.get();
+    }
+
+    public @NotNull ItemPair<T> generate(double amountBonus, double chanceBonus) {
+        checkEmpty();
+        double number = r.nextDouble(weightSum + bonusSum*chanceBonus);
+        for(Item<T> item : itemList) {
+            number -= item.getChance(chanceBonus);
+            if(number <= 0.0) {
+                return item.get(amountBonus);
+            }
+        }
+        // in case of number not reaching 0.0 or lower due to floating point precision errors
+        Item<T> item = itemList.get(itemList.size() - 1);
+        return item.get(amountBonus);
     }
 
     public @NotNull List<ItemPair<T>> generate(int amount, double amountBonus, double chanceBonus) {
+        checkEmpty();
         if(amount > itemList.size()) throw new ArrayIndexOutOfBoundsException("Can not generate " + amount + " items from generator because it only has " + itemList.size() + " items!");
         List<ItemPair<T>> result = new ArrayList<>(itemList.size());
         double tempWeightSum = weightSum;
@@ -53,7 +77,7 @@ public class WeightedGenerator<T> extends ItemGenerator<T> {
                 Item<T> item = itemList.get(index);
                 number -= item.getChance(chanceBonus);
                 if(number <= 0.0) {
-                    result.add(new ItemPair<>(item.getItem(), item.getAmount(amountBonus)));
+                    result.add(item.get(amountBonus));
                     tempStorage.add(item);
                     fastRemove(itemList, index);
                     tempWeightSum -= item.getChance();
@@ -67,6 +91,8 @@ public class WeightedGenerator<T> extends ItemGenerator<T> {
         }
         return result;
     }
+
+
 
     private void fastRemove(ArrayList<Item<T>> list, int index) {
         if(index == list.size() - 1) list.remove(index);

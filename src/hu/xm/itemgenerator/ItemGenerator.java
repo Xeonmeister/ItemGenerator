@@ -25,4 +25,8 @@ public abstract class ItemGenerator<T> {
     public Item<T> remove(int index) {
         return itemList.remove(index);
     }
+
+    protected void checkEmpty() {
+        if(itemList.size() == 0) throw new IllegalStateException("Generator is empty.");
+    }
 }
